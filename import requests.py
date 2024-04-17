@@ -1,33 +1,45 @@
 import requests
 import sqlite3
 
-url = "https://weatherbit-v1-mashape.p.rapidapi.com/alerts"
-
-querystring = {"lat":"38.5","lon":"-78.5"}
+url = "https://weatherbit-v1-mashape.p.rapidapi.com/forecast/daily"
 
 headers = {
-	"X-RapidAPI-Key": "262779a44dmshb169a29003312d8p1e7d3djsn897bdfe4b4a3",
+	"X-RapidAPI-Key": "f2d8fcd218msh6df8eb3d1d73f9ap11e9c9jsn50883ebfe3a4",
 	"X-RapidAPI-Host": "weatherbit-v1-mashape.p.rapidapi.com"
 }
+all_data = []
+lat = 0
+lng = 0
 
-response = requests.get(url, headers=headers, params=querystring)
+all_data = []
+for i in range(0, 100):
+    lat += i  # or whatever initial latitude value you want
+    lng += i  # or whatever initial longitude value you want
+    querystring = {"lat": str(lat), "lng": str(lng)}
+    response = requests.get(url, headers=headers, params=querystring)
+    data = response.json()
+    print(data)
+    all_data.append(data)
 
-data = response.json()
-print(data)
+print(all_data)
 
 conn = sqlite3.connect("weather_data.db")
 cur = conn.cursor()
 
 # Create table if it doesn't exist
-cur.execute('''CREATE TABLE IF NOT EXISTS weather_data
-               (city_name TEXT, lat REAL, lon REAL, state_code TEXT, timezone TEXT)''')
-city_name = data.get('city_name')
-lat = data.get('lat')
-lon = data.get('lon')
-state_code = data.get('state_code')
-timezone = data.get('timezone')
 
-cur.execute('INSERT INTO weather_data (city_name, lat, lon, state_code, timezone) VALUES (?, ?, ?, ?, ?)', (city_name, lat, lon, state_code, timezone))
+# cur.execute('DROP TABLE IF EXISTS weather_data')
+cur.execute('''CREATE TABLE IF NOT EXISTS weather_data
+               (city_name TEXT, lat REAL, lng REAL, state_code TEXT, timezone TEXT)''')
+
+for item in all_data:
+    city_name = item['city_name']
+    name = item['name']
+    lat = item['lat']
+    lng = item['lng']
+    state_code = item['state_code']
+    timezone = item['timezone']
+    cur.execute('INSERT OR IGNORE INTO weather_data (city_name, lat, lng, state_code, timezone) VALUES (?, ?, ?, ?, ?)', (city_name, lat, lng, state_code, timezone))
 
 
 
